@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:safe_pass/util/password_generator.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,12 +21,13 @@ class _MainScreenState extends State<MainScreen>
   bool _numbersCheckBox = false;
   bool _symbolsCheckBox = false;
   double _passwordLength = 6.0;
-  Map<String, String> _savedPasswords;
+  List<Widget> _savedPasswords;
   TabController _tabBarController;
   int _selectedIndex = 0;
   @override
   void initState() {
     super.initState();
+    _readSavedPasswords();
     _tabBarController =
         TabController(initialIndex: _selectedIndex, length: 2, vsync: this);
     _tabBarController.addListener(() {
@@ -36,11 +38,80 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  _readSavedPasswords() async {
+    try {
+      var passMap = await _storage.readAll(aOptions: AndroidOptions());
+      List<Widget> tempList = [];
+      passMap.forEach((key, value) {
+        print('key $key value $value');
+        tempList.add(Container(
+          margin: EdgeInsets.only(top: 5, bottom: 5),
+          child: Column(
+            children: [
+              Text(key),
+              SelectableText(
+                value,
+                onTap: _copyToClipboard,
+              )
+            ],
+          ),
+        ));
+      });
+      setState(() {
+        _savedPasswords = tempList;
+      });
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  String _passName;
+  _savePassword() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Container(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Enter password association'),
+                TextField(
+                  onChanged: (value) => setState(() {
+                    _passName = value;
+                  }),
+                ),
+                FlatButton(
+                    onPressed: () {
+                      _storage.write(key: _passName, value: _password);
+                      _readSavedPasswords();
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('save'))
+              ],
+            )),
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Safe pass'),
+        actions: [
+          Visibility(
+            visible: _password != null &&
+                _password.compareTo('No character type selected') != 0,
+            child: IconButton(
+                icon: Icon(Icons.save_alt_sharp), onPressed: _savePassword),
+          ),
+          IconButton(icon: Icon(Icons.settings), onPressed: () {})
+        ],
+        title: Text(
+          'Safe pass',
+          style: GoogleFonts.nunito(
+              color: Theme.of(context).colorScheme.onPrimary),
+        ),
         bottom: TabBar(controller: _tabBarController, tabs: [
           Tab(
             text: 'Generator',
@@ -67,7 +138,11 @@ class _MainScreenState extends State<MainScreen>
 
   _savedPasswordsTab() {
     return _savedPasswords != null
-        ? ListView()
+        ? ListView.builder(
+            itemCount: _savedPasswords.length,
+            itemBuilder: (context, index) {
+              return _savedPasswords[index];
+            })
         : Container(
             alignment: Alignment.center,
             child: Text('Nothing saved yet'),
@@ -75,53 +150,76 @@ class _MainScreenState extends State<MainScreen>
   }
 
   _generatePasswordTab() {
-    return Column(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Container(
-            alignment: Alignment.center,
-            child: SelectableText(
-              _password ?? '',
-              onTap: _copyToClipboard,
-            ),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: CustomScrollView(slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+            // mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                flex: 3,
+                child: Container(
+                  // height: 200,
+                  alignment: Alignment.center,
+                  child: SelectableText(
+                    _password ?? '',
+                    onTap: _copyToClipboard,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: FlatButton(
+                    onPressed: _generatePassword,
+                    child: Text('Generate password')),
+              ),
+              Flexible(child: _lengthSlider()),
+              Flexible(
+                child: CheckboxListTile(
+                    title: Text('Use numbers'),
+                    value: _numbersCheckBox,
+                    onChanged: (value) {
+                      setState(() {
+                        _numbersCheckBox = value;
+                      });
+                    }),
+              ),
+              Flexible(
+                child: CheckboxListTile(
+                    title: Text('Use symbols'),
+                    value: _symbolsCheckBox,
+                    onChanged: (value) {
+                      setState(() {
+                        _symbolsCheckBox = value;
+                      });
+                    }),
+              ),
+              Flexible(
+                child: CheckboxListTile(
+                    title: Text('Use letters'),
+                    value: _lettersCheckBox,
+                    onChanged: (value) {
+                      setState(() {
+                        _lettersCheckBox = value;
+                      });
+                    }),
+              ),
+            ],
           ),
         ),
-        FlatButton(
-            onPressed: _generatePassword, child: Text('Generate password')),
-        _lengthSlider(),
-        CheckboxListTile(
-            title: Text('Use numbers'),
-            value: _numbersCheckBox,
-            onChanged: (value) {
-              setState(() {
-                _numbersCheckBox = value;
-              });
-            }),
-        CheckboxListTile(
-            title: Text('Use symbols'),
-            value: _symbolsCheckBox,
-            onChanged: (value) {
-              setState(() {
-                _symbolsCheckBox = value;
-              });
-            }),
-        CheckboxListTile(
-            title: Text('Use letters'),
-            value: _lettersCheckBox,
-            onChanged: (value) {
-              setState(() {
-                _lettersCheckBox = value;
-              });
-            }),
-      ],
+      ]),
     );
   }
 
   _copyToClipboard() async {
+    _storage.readAll(aOptions: AndroidOptions());
     await Clipboard.setData(ClipboardData(text: _password));
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Password was copied to clipboard')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.green,
+        content: const Text('Password was copied to clipboard')));
   }
 
   _lengthSlider() {
