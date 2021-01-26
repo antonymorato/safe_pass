@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safe_pass/util/clipboard_util.dart';
 import 'package:safe_pass/util/password_generator.dart';
+
+import 'widgets/password_list_tile.dart';
 
 class MainScreen extends StatefulWidget {
   MainScreen({Key key}) : super(key: key);
@@ -44,18 +47,19 @@ class _MainScreenState extends State<MainScreen>
       List<Widget> tempList = [];
       passMap.forEach((key, value) {
         print('key $key value $value');
-        tempList.add(Container(
-          margin: EdgeInsets.only(top: 5, bottom: 5),
-          child: Column(
-            children: [
-              Text(key),
-              SelectableText(
-                value,
-                onTap: _copyToClipboard,
-              )
-            ],
-          ),
-        ));
+        tempList.add(PasswordListTile(key, value)
+            // Container(
+            // margin: EdgeInsets.only(top: 5, bottom: 5),
+            // child: Column(
+            //   children: [
+            //     Text(key),
+            //     SelectableText(
+            //       value,
+            //       onTap: _copyToClipboard,
+            //     )
+            // ],
+            // ),
+            );
       });
       setState(() {
         _savedPasswords = tempList;
@@ -81,6 +85,14 @@ class _MainScreenState extends State<MainScreen>
                     _passName = value;
                   }),
                 ),
+                SizedBox(height: 10),
+                Text('Your password'),
+                TextField(
+                  onChanged: (value) => setState(() {
+                    _password = value;
+                  }),
+                ),
+                SizedBox(height: 10),
                 FlatButton(
                     onPressed: () {
                       _storage.write(key: _passName, value: _password);
@@ -98,6 +110,7 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.green,
         actions: [
           Visibility(
             visible: _password != null &&
@@ -112,16 +125,19 @@ class _MainScreenState extends State<MainScreen>
           style: GoogleFonts.nunito(
               color: Theme.of(context).colorScheme.onPrimary),
         ),
-        bottom: TabBar(controller: _tabBarController, tabs: [
-          Tab(
-            text: 'Generator',
-            icon: Icon(Icons.lock),
-          ),
-          Tab(
-            text: 'Saved',
-            icon: Icon(Icons.save),
-          )
-        ]),
+        bottom: TabBar(
+            indicatorColor: Colors.white,
+            controller: _tabBarController,
+            tabs: [
+              Tab(
+                text: 'Generator',
+                icon: Icon(Icons.lock),
+              ),
+              Tab(
+                text: 'Saved',
+                icon: Icon(Icons.save),
+              )
+            ]),
       ),
       body: Container(
         padding: EdgeInsets.only(bottom: 20),
@@ -163,11 +179,13 @@ class _MainScreenState extends State<MainScreen>
               Flexible(
                 flex: 3,
                 child: Container(
+                  color: Colors.greenAccent,
                   // height: 200,
                   alignment: Alignment.center,
                   child: SelectableText(
                     _password ?? '',
-                    onTap: _copyToClipboard,
+                    onTap: _copyToClipBoard,
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
@@ -214,12 +232,9 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  _copyToClipboard() async {
-    _storage.readAll(aOptions: AndroidOptions());
-    await Clipboard.setData(ClipboardData(text: _password));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.green,
-        content: const Text('Password was copied to clipboard')));
+  _copyToClipBoard() async {
+    ClipboardUtil.copyToClipboard(_password);
+    ScaffoldMessenger.of(context).showSnackBar(ClipboardUtil.copiedSnackBar());
   }
 
   _lengthSlider() {

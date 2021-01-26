@@ -11,8 +11,10 @@ class MainApp extends StatelessWidget {
     SystemChrome.setEnabledSystemUIOverlays([]);
     SystemChrome.setPreferredOrientations(
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // theme: ThemeData(primaryTextTheme: TextTheme()),
       home: MainScreen(),
     );
   }
