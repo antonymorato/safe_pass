@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:safe_pass/screen/main_screen.dart';
+
+import 'screen/main_screen.dart';
 
 class MainApp extends StatelessWidget {
   const MainApp({Key key}) : super(key: key);

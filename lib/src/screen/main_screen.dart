@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:safe_pass/util/clipboard_util.dart';
-import 'package:safe_pass/util/password_generator.dart';
+import 'package:safe_pass/src/util/clipboard_util.dart';
+import 'package:safe_pass/src/util/password_generator.dart';
 
 import 'widgets/password_list_tile.dart';
 

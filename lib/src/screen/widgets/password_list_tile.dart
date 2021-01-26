@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:safe_pass/util/clipboard_util.dart';
+import 'package:safe_pass/src/util/clipboard_util.dart';
 
 class PasswordListTile extends StatefulWidget {
   PasswordListTile(this._passwordName, this._password, {Key key})
